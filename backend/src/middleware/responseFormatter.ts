@@ -7,7 +7,7 @@ const responseFormatter = (req: Request, res: Response, next: NextFunction): voi
     if (res.statusCode >= 400) {
       return originalJson(body);
     }
-    return originalJson({ data: body });
+    return originalJson({ success: true, data: body });
   };
 
   next();
