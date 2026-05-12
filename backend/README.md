@@ -192,19 +192,53 @@ All endpoints return the same JSON shape:
 
 ## Getting Started
 
-### Prerequisites
+There are two ways to run the backend: with Docker (recommended, no local setup required) or directly with Node.js.
+
+---
+
+### Option A — Docker (recommended)
+
+#### Prerequisites
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+
+#### 1. Start everything
+
+```bash
+cd backend
+docker-compose up --build
+```
+
+This builds the image, starts a Postgres container, waits for it to be healthy, runs migrations, and starts the API — all in one command.
+
+The server starts at `http://localhost:3000`.  
+Swagger UI is available at `http://localhost:3000/api-docs`.
+
+#### Other Docker commands
+
+```bash
+docker-compose up --build    # rebuild after code changes
+docker-compose down          # stop and remove containers
+docker-compose down -v       # stop and wipe the database volume
+```
+
+---
+
+### Option B — Local Node.js
+
+#### Prerequisites
 
 - Node.js 22+
-- PostgreSQL running locally (or via Docker)
+- PostgreSQL running locally
 
-### 1. Install dependencies
+#### 1. Install dependencies
 
 ```bash
 cd backend
 npm install
 ```
 
-### 2. Configure environment
+#### 2. Configure environment
 
 ```bash
 cp .env.template .env
@@ -226,19 +260,19 @@ DATASET_1_PATH=./data/data_set_1.json
 DATASET_2_PATH=./data/data_set_2.json
 ```
 
-### 3. Create the database
+#### 3. Create the database
 
 ```bash
 psql -U postgres -c "CREATE DATABASE kudwa;"
 ```
 
-### 4. Run migrations
+#### 4. Run migrations
 
 ```bash
 npm run migrate
 ```
 
-### 5. Start the development server
+#### 5. Start the development server
 
 ```bash
 npm run dev
