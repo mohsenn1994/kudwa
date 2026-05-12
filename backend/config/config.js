@@ -9,8 +9,16 @@ const base = {
   dialect: 'postgres',
 };
 
+const production = process.env.DATABASE_URL
+  ? {
+      use_env_variable: 'DATABASE_URL',
+      dialect: 'postgres',
+      dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
+    }
+  : base;
+
 module.exports = {
   development: base,
   test: { ...base, database: process.env.DB_NAME_TEST || 'kudwa_test' },
-  production: base,
+  production,
 };

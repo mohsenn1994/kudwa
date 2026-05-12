@@ -5,17 +5,23 @@ import { initTransaction, Transaction } from './Transaction';
 import { initProfitLossReport, ProfitLossReport } from './ProfitLossReport';
 import { initProfitLossLineItem, ProfitLossLineItem } from './ProfitLossLineItem';
 
-export const sequelize = new Sequelize(
-  config.database as string,
-  config.username as string,
-  config.password ?? undefined,
-  {
-    host: config.host,
-    port: config.port,
-    dialect: 'postgres',
-    logging: config.logging,
-  }
-);
+export const sequelize = process.env.DATABASE_URL
+  ? new Sequelize(process.env.DATABASE_URL, {
+      dialect: 'postgres',
+      logging: config.logging,
+      dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
+    })
+  : new Sequelize(
+      config.database as string,
+      config.username as string,
+      config.password ?? undefined,
+      {
+        host: config.host,
+        port: config.port,
+        dialect: 'postgres',
+        logging: config.logging,
+      }
+    );
 
 initAccount(sequelize);
 initTransaction(sequelize);
