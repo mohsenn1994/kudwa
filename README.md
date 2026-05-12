@@ -297,3 +297,98 @@ Swagger UI is available at `http://localhost:3000/api-docs`.
 | `npm run migrate:undo:all` | Roll back all migrations |
 | `npm test` | Run Jest test suite |
 | `npm run test:watch` | Run Jest in watch mode |
+
+---
+
+# Kudwa ETL — Frontend
+
+React dashboard that consumes the backend API and displays the P&L report and KPI summary.
+
+---
+
+## Stack
+
+| Layer | Technology |
+|---|---|
+| Language | TypeScript 5 |
+| Framework | React 18 |
+| Build tool | Vite 5 |
+| UI components | MUI v6 (Material UI) |
+| Charts | Recharts 2 |
+| Data grid | MUI X Data Grid 7 |
+| HTTP client | Axios |
+| Routing | React Router DOM v7 |
+
+---
+
+## Project Structure
+
+```
+frontend/
+├── index.html
+├── vite.config.ts
+├── src/
+│   ├── api/
+│   │   ├── client.ts           # Axios instance, API methods, backend → display type mappers
+│   │   ├── format.ts           # Number / currency formatters
+│   │   └── kpis.ts             # KPI derivation helpers
+│   ├── components/
+│   │   ├── AppShell.tsx        # Top-level layout with nav
+│   │   ├── EmptyState.tsx      # Empty / error placeholder
+│   │   ├── IntegrationControls.tsx  # "Run integration" button + result summary
+│   │   ├── KpiCard.tsx         # Single KPI metric card
+│   │   ├── ProfitLossTable.tsx # Hierarchical P&L line item tree
+│   │   └── SourceSelector.tsx  # Data source toggle
+│   ├── pages/
+│   │   ├── DashboardPage.tsx   # KPI overview with charts
+│   │   └── ReportPage.tsx      # Full P&L report table
+│   ├── theme/
+│   │   └── theme.ts            # MUI theme + design tokens
+│   ├── types/
+│   │   └── api.ts              # Backend raw types + UI display types
+│   ├── App.tsx                 # Router setup
+│   └── main.tsx                # Entry point
+```
+
+---
+
+## Getting Started
+
+#### Prerequisites
+
+- Node.js 22+
+- Backend running at `http://localhost:3000` (see backend Getting Started above)
+
+#### 1. Install dependencies
+
+```bash
+cd frontend
+npm install
+```
+
+#### 2. Configure environment (optional)
+
+By default the frontend proxies API requests to `http://localhost:3000`. To point at a different backend, create a `.env` file:
+
+```env
+VITE_API_BASE_URL=http://localhost:3000
+```
+
+#### 3. Start the development server
+
+```bash
+npm run dev
+```
+
+The app starts at `http://localhost:5173`.
+
+---
+
+## Available Scripts
+
+| Script | Description |
+|---|---|
+| `npm run dev` | Start Vite dev server with hot reload |
+| `npm run build` | Type-check and bundle for production |
+| `npm run preview` | Preview the production build locally |
+| `npm run lint` | Run ESLint across `src/` |
