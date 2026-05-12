@@ -302,7 +302,7 @@ Swagger UI is available at `http://localhost:3000/api-docs`.
 
 # Kudwa ETL — Frontend
 
-React dashboard that consumes the backend API and displays the P&L report and KPI summary.
+React dashboard that consumes the backend API and displays the P&L report and a financial overview.
 
 ---
 
@@ -315,9 +315,7 @@ React dashboard that consumes the backend API and displays the P&L report and KP
 | Build tool | Vite 5 |
 | UI components | MUI v6 (Material UI) |
 | Charts | Recharts 2 |
-| Data grid | MUI X Data Grid 7 |
 | HTTP client | Axios |
-| Routing | React Router DOM v7 |
 
 ---
 
@@ -330,23 +328,22 @@ frontend/
 ├── src/
 │   ├── api/
 │   │   ├── client.ts           # Axios instance, API methods, backend → display type mappers
-│   │   ├── format.ts           # Number / currency formatters
-│   │   └── kpis.ts             # KPI derivation helpers
+│   │   └── format.ts           # Currency and number formatters
 │   ├── components/
-│   │   ├── AppShell.tsx        # Top-level layout with nav
-│   │   ├── EmptyState.tsx      # Empty / error placeholder
+│   │   ├── AppShell.tsx        # Fixed sidebar layout with tab navigation
+│   │   ├── EmptyState.tsx      # Empty / pre-integration placeholder
 │   │   ├── IntegrationControls.tsx  # "Run integration" button + result summary
-│   │   ├── KpiCard.tsx         # Single KPI metric card
-│   │   ├── ProfitLossTable.tsx # Hierarchical P&L line item tree
-│   │   └── SourceSelector.tsx  # Data source toggle
+│   │   └── ProfitLossTable.tsx # Collapsible hierarchical P&L line item table
 │   ├── pages/
-│   │   ├── DashboardPage.tsx   # KPI overview with charts
-│   │   └── ReportPage.tsx      # Full P&L report table
+│   │   ├── DashboardPage.tsx   # KPI cards + P&L breakdown bar chart
+│   │   └── ReportPage.tsx      # Full P&L report table with report selector
 │   ├── theme/
 │   │   └── theme.ts            # MUI theme + design tokens
 │   ├── types/
-│   │   └── api.ts              # Backend raw types + UI display types
-│   ├── App.tsx                 # Router setup
+│   │   ├── backend.ts          # Raw API response shapes (snake_case)
+│   │   ├── display.ts          # UI component shapes (camelCase, hierarchical)
+│   │   └── page.ts             # Shared page hook interface
+│   ├── App.tsx                 # Tab routing and AppShell wiring
 │   └── main.tsx                # Entry point
 ```
 
