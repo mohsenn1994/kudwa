@@ -8,7 +8,7 @@ async function extractDataset2(): Promise<unknown> {
   logger.info('Starting extraction of Dataset 2');
   const filePath = process.env.DATASET_2_PATH
     ? path.resolve(process.env.DATASET_2_PATH)
-    : path.resolve(__dirname, '../../../data/data_set_2.json');
+    : path.resolve(__dirname, '../../../../data/data_set_2.json');
 
   if (!fs.existsSync(filePath)) {
     throw new Error(`Dataset 2 not found at: ${filePath}`);
