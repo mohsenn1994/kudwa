@@ -8,6 +8,7 @@
     "build": "tsc",
     "dev": "nodemon",
     "migrate": "npx sequelize-cli db:migrate",
+    "migrate:create": "npx sequelize-cli migration:generate --name",
     "migrate:undo": "npx sequelize-cli db:migrate:undo",
     "migrate:undo:all": "npx sequelize-cli db:migrate:undo:all",
     "seed": "npx sequelize-cli db:seed:all",
@@ -24,7 +25,8 @@
     "sequelize": "^6.37.3",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
-    "winston": "^3.19.0"
+    "winston": "^3.19.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
