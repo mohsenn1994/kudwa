@@ -76,10 +76,10 @@ function normalizeDataSet1Transactions(rawData: unknown): NormalizedTransaction[
       for (const [colIndexStr, meta] of Object.entries(colMeta)) {
         const cell = colData[parseInt(colIndexStr)];
         const rawValue = cell?.value;
-        if (!rawValue) return;
+        if (!rawValue) continue;
 
         const amount = parseFloat(rawValue);
-        if (isNaN(amount)) return;
+        if (isNaN(amount)) continue;
 
         transactions.push({
           external_id: `dataset_1__${accountId}__${meta.periodStart}`,
@@ -146,30 +146,30 @@ function iterateDataSet2LineItems(
 
     // The external_id combines account + period start date to uniquely identify
     // this account's balance for this specific reporting period.
-    transactions.push({
-      external_id: `dataset_2__${item.account_id}__${periodStart}`,
-      source: 'dataset_2',
-      date: periodStart,
-      period_end: periodEnd,
-      amount,
-      currency: 'USD',
-      description: item.name ?? `account_${item.account_id}`,
-      transaction_type: amount >= 0 ? 'credit' : 'debit',
-      pl_group: categoryField,
-      pl_category: GROUP_TO_CATEGORY[categoryField] ?? 'other',
-      raw_data: {
-        account_id: item.account_id,
-        name: item.name,
-        value: item.value,
-        period_start: periodStart,
-        period_end: periodEnd,
-      },
-    });
-
-    // Recurse into children after emitting the parent — both levels produce
-    // transactions so the P&L report can display subtotals and individual lines.
+    // Parent accounts with children are rollup totals — their value equals
+    // the sum of their children. Only emit leaf nodes to avoid double-counting.
     if (item.line_items?.length) {
       iterateDataSet2LineItems(item.line_items, categoryField, periodStart, periodEnd, transactions, depth + 1);
+    } else {
+      transactions.push({
+        external_id: `dataset_2__${item.account_id}__${periodStart}`,
+        source: 'dataset_2',
+        date: periodStart,
+        period_end: periodEnd,
+        amount,
+        currency: 'USD',
+        description: item.name ?? `account_${item.account_id}`,
+        transaction_type: amount >= 0 ? 'credit' : 'debit',
+        pl_group: categoryField,
+        pl_category: GROUP_TO_CATEGORY[categoryField] ?? 'other',
+        raw_data: {
+          account_id: item.account_id,
+          name: item.name,
+          value: item.value,
+          period_start: periodStart,
+          period_end: periodEnd,
+        },
+      });
     }
   }
 }
