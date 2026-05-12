@@ -108,4 +108,59 @@ describe('buildProfitAndLoss', () => {
     const report = buildProfitAndLoss(baseTransactions);
     expect(report.currency).toBe('USD');
   });
+
+  it('revenue-only waterfall — expense buckets are 0 and all calculated rows still present', () => {
+    const transactions = [
+      makeTransaction({ external_id: 't1', amount: 20000, pl_group: 'Income', description: 'Sales' }),
+    ];
+    const report = buildProfitAndLoss(transactions);
+    expect(report.totalRevenue).toBe(20000);
+    expect(report.totalCogs).toBe(0);
+    expect(report.grossProfit).toBe(20000);
+    expect(report.totalExpenses).toBe(0);
+    expect(report.netOperatingIncome).toBe(20000);
+    expect(report.totalOtherIncome).toBe(0);
+    expect(report.totalOtherExpenses).toBe(0);
+    expect(report.netProfit).toBe(20000);
+    const calculatedNames = report.lineItems.filter(li => li.category === 'calculated').map(li => li.name);
+    expect(calculatedNames).toContain('Gross Profit');
+    expect(calculatedNames).toContain('Net Operating Income');
+    expect(calculatedNames).toContain('Net Income');
+  });
+
+  it('netProfit is negative when COGS exceeds revenue', () => {
+    // Positive COGS: grossProfit = revenue - cogs → negative when cogs > revenue
+    const transactions = [
+      makeTransaction({ external_id: 't1', amount: 1000, pl_group: 'Income', description: 'Sales' }),
+      makeTransaction({ external_id: 't2', amount: 5000, pl_group: 'COGS',   description: 'Materials' }),
+    ];
+    const report = buildProfitAndLoss(transactions);
+    expect(report.totalRevenue).toBe(1000);
+    expect(report.totalCogs).toBe(5000);
+    expect(report.grossProfit).toBe(1000 - 5000); // -4000
+    expect(report.netProfit).toBeLessThan(0);
+    expect(report.netProfit).toBe(-4000);
+  });
+
+  it('transactions from both datasets in every bucket combine correctly', () => {
+    const mixed = [
+      makeTransaction({ external_id: 'ds1-inc', amount:  8000, pl_group: 'Income', source: 'dataset_1' }),
+      makeTransaction({ external_id: 'ds2-inc', amount:  2000, pl_group: 'revenue', source: 'dataset_2' }),
+      makeTransaction({ external_id: 'ds1-cogs', amount: -1000, pl_group: 'COGS', source: 'dataset_1', transaction_type: 'debit' }),
+      makeTransaction({ external_id: 'ds2-cogs', amount:  -500, pl_group: 'cost_of_goods_sold', source: 'dataset_2', transaction_type: 'debit' }),
+      makeTransaction({ external_id: 'ds1-exp', amount:  -800, pl_group: 'Expenses', source: 'dataset_1', transaction_type: 'debit' }),
+      makeTransaction({ external_id: 'ds2-exp', amount:  -200, pl_group: 'operating_expenses', source: 'dataset_2', transaction_type: 'debit' }),
+    ];
+    const report = buildProfitAndLoss(mixed);
+    expect(report.totalRevenue).toBe(10000);
+    expect(report.totalCogs).toBe(-1500);
+    expect(report.grossProfit).toBe(10000 - (-1500)); // 11500
+    expect(report.totalExpenses).toBe(-1000);
+    expect(report.netOperatingIncome).toBe(report.grossProfit - report.totalExpenses);
+    // Revenue and COGS from both datasets should merge into a single section each
+    const incomeRows = report.lineItems.filter(li => li.name === 'Income');
+    expect(incomeRows).toHaveLength(1);
+    const cogsRows = report.lineItems.filter(li => li.name === 'Cost of Goods Sold');
+    expect(cogsRows).toHaveLength(1);
+  });
 });

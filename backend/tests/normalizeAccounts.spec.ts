@@ -220,3 +220,90 @@ describe('normalizeAccounts — unknown source', () => {
     expect(() => normalizeAccounts({}, 'dataset_3')).toThrow('Unknown source');
   });
 });
+
+describe('normalizeAccounts — additional edge cases', () => {
+  it('DS1: registers all sibling accounts in the same section', () => {
+    const ds1MultipleAccounts = {
+      data: {
+        Header: { Currency: 'USD' },
+        Columns: { Column: [] },
+        Rows: {
+          Row: [
+            {
+              type: 'Section',
+              group: 'Income',
+              Header: { ColData: [{ value: 'Income' }] },
+              Rows: {
+                Row: [
+                  { type: 'Data', ColData: [{ id: '100', value: 'Sales' }] },
+                  { type: 'Data', ColData: [{ id: '101', value: 'Services' }] },
+                  { type: 'Data', ColData: [{ id: '102', value: 'Consulting' }] },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    };
+    const accounts = normalizeAccounts(ds1MultipleAccounts, 'dataset_1');
+    expect(accounts).toHaveLength(3);
+    expect(accounts.map(a => a.external_id)).toEqual(
+      expect.arrayContaining(['dataset_1__100', 'dataset_1__101', 'dataset_1__102'])
+    );
+  });
+
+  it('DS2: includes all accounts from the first period even if absent in later periods', () => {
+    const ds2Asymmetric = {
+      data: [
+        {
+          period_start: '2022-08-01',
+          period_end: '2022-08-31',
+          revenue: [
+            {
+              name: 'Business Revenue',
+              line_items: [
+                { account_id: 'acc-001', name: 'Product Sales', value: '5000', line_items: [] },
+                { account_id: 'acc-002', name: 'Service Sales', value: '1000', line_items: [] },
+              ],
+            },
+          ],
+        },
+        {
+          // Second period — acc-002 missing, but accounts are derived from first period only
+          period_start: '2022-09-01',
+          period_end: '2022-09-30',
+          revenue: [
+            {
+              name: 'Business Revenue',
+              line_items: [
+                { account_id: 'acc-001', name: 'Product Sales', value: '6000', line_items: [] },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const accounts = normalizeAccounts(ds2Asymmetric, 'dataset_2');
+    expect(accounts).toHaveLength(2);
+    expect(accounts.map(a => a.external_id)).toEqual(
+      expect.arrayContaining(['dataset_2__acc-001', 'dataset_2__acc-002'])
+    );
+  });
+
+  it('DS2: throws when line items are nested deeper than 20 levels', () => {
+    function buildDeepItems(depth: number): object {
+      if (depth === 0) return { account_id: 'acc-leaf', name: 'Leaf', value: '100', line_items: [] };
+      return { account_id: `acc-${depth}`, name: `Level ${depth}`, value: '100', line_items: [buildDeepItems(depth - 1)] };
+    }
+    const deepFixture = {
+      data: [
+        {
+          period_start: '2022-08-01',
+          period_end: '2022-08-31',
+          revenue: [{ name: 'Revenue', line_items: [buildDeepItems(25)] }],
+        },
+      ],
+    };
+    expect(() => normalizeAccounts(deepFixture, 'dataset_2')).toThrow(/depth/i);
+  });
+});

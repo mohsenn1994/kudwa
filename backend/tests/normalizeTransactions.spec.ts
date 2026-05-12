@@ -280,3 +280,87 @@ describe('normalizeTransactions — unknown source', () => {
     expect(() => normalizeTransactions({}, 'dataset_3')).toThrow('Unknown source');
   });
 });
+
+describe('normalizeTransactions — additional edge cases', () => {
+  it('DS1: emits a zero-amount transaction (zero filtering happens downstream in buildProfitAndLoss)', () => {
+    const ds1WithZero = {
+      data: {
+        Header: { Currency: 'USD' },
+        Columns: {
+          Column: [
+            { ColType: 'Account', ColTitle: '' },
+            { ColType: 'Money', ColTitle: 'Jan 2022', MetaData: [{ Name: 'StartDate', Value: '2022-01-01' }, { Name: 'EndDate', Value: '2022-01-31' }] },
+          ],
+        },
+        Rows: {
+          Row: [
+            {
+              type: 'Section',
+              group: 'Income',
+              Header: { ColData: [{ value: 'Income' }] },
+              Rows: {
+                Row: [{ type: 'Data', ColData: [{ id: '100', value: 'Sales' }, { value: '0.00' }] }],
+              },
+            },
+          ],
+        },
+      },
+    };
+    const txns = normalizeTransactions(ds1WithZero, 'dataset_1');
+    expect(txns).toHaveLength(1);
+    expect(txns[0].amount).toBe(0);
+  });
+
+  it('DS2: skips grouping nodes with no account_id and recurses into their children', () => {
+    const ds2WithGroupingNode = {
+      data: [
+        {
+          period_start: '2022-08-01',
+          period_end: '2022-08-31',
+          revenue: [
+            {
+              name: 'Business Revenue',
+              line_items: [
+                {
+                  name: 'Services',
+                  value: 1000,
+                  line_items: [
+                    { account_id: 'acc-020', name: 'Consulting', value: 800, line_items: [] },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const txns = normalizeTransactions(ds2WithGroupingNode, 'dataset_2');
+    expect(txns).toHaveLength(1);
+    expect(txns[0].external_id).toBe('dataset_2__acc-020__2022-08-01');
+  });
+
+  it('DS1: throws when the row tree exceeds 20 levels deep', () => {
+    function buildDeep(depth: number): object {
+      if (depth === 0) return { type: 'Data', ColData: [{ id: 'x', value: 'x' }, { value: '100.00' }] };
+      return {
+        type: 'Section',
+        group: 'Income',
+        Header: { ColData: [{ value: 'S' }] },
+        Rows: { Row: [buildDeep(depth - 1)] },
+      };
+    }
+    const deepFixture = {
+      data: {
+        Header: { Currency: 'USD' },
+        Columns: {
+          Column: [
+            { ColType: 'Account', ColTitle: '' },
+            { ColType: 'Money', ColTitle: 'Jan 2022', MetaData: [{ Name: 'StartDate', Value: '2022-01-01' }, { Name: 'EndDate', Value: '2022-01-31' }] },
+          ],
+        },
+        Rows: { Row: [buildDeep(25)] },
+      },
+    };
+    expect(() => normalizeTransactions(deepFixture, 'dataset_1')).toThrow(/depth/i);
+  });
+});

@@ -116,4 +116,38 @@ describe('mergeSources', () => {
     expect(result.accounts[0].depth).toBe(2);
     expect(result.accounts[0].parent_external_id).toBe('dataset_1__parent');
   });
+
+  it('deduplicates many collisions at once — dataset_2 always wins', () => {
+    const sharedIds = ['id-1', 'id-2', 'id-3', 'id-4', 'id-5'];
+    const ds1Accounts = sharedIds.map(id => {
+      const a = makeAccount(id, 'dataset_1');
+      a.name = `dataset_1 ${id}`;
+      return a;
+    });
+    const ds2Accounts = sharedIds.map(id => {
+      const a = makeAccount(id, 'dataset_2');
+      a.name = `dataset_2 ${id}`;
+      return a;
+    });
+    const ds1Transactions = sharedIds.map(id => {
+      const t = makeTransaction(id, 'dataset_1');
+      t.amount = 100;
+      return t;
+    });
+    const ds2Transactions = sharedIds.map(id => {
+      const t = makeTransaction(id, 'dataset_2');
+      t.amount = 999;
+      return t;
+    });
+
+    const result = mergeSources(
+      { accounts: ds1Accounts, transactions: ds1Transactions },
+      { accounts: ds2Accounts, transactions: ds2Transactions }
+    );
+
+    expect(result.accounts).toHaveLength(5);
+    expect(result.transactions).toHaveLength(5);
+    expect(result.accounts.every(a => a.name.startsWith('dataset_2'))).toBe(true);
+    expect(result.transactions.every(t => t.amount === 999)).toBe(true);
+  });
 });
