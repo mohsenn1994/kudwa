@@ -13,7 +13,8 @@
     "declaration": true,
     "sourceMap": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "types": ["jest", "node"]
   },
   "ts-node": { "files": true },
   "include": ["src/**/*", "server.ts", "tests/**/*"],
